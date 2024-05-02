@@ -1,11 +1,48 @@
 import click
 import logging
 
-logging.basicConfig(level=logging.INFO, format='%(message)s')
+logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
 GOLDEN_RATIO = 1.618
 GOLDEN_RATIO_NARROW = 1.618 - 1
+
+SQRT_TWO = 1.414
+SQRT_TWO_NARROW = 1.414 - 1
+
+
+def find_dimensions(
+    start: float,
+    end: float,
+    lower_bound: float,
+    upper_bound: float,
+    step: float,
+    wide_factor: float,
+    narrow_factor: float,
+) -> tuple[float, float, float, float]:
+    calc_volume_cm3 = 0
+    height_cm = start
+    width_cm = 0
+    depth_cm = 0
+
+    while height_cm < end:
+        width_cm = height_cm * wide_factor
+        depth_cm = height_cm * narrow_factor
+        calc_volume_cm3 = height_cm * width_cm * depth_cm
+        logger.debug(
+            "%s x %s x %s = %s",
+            height_cm,
+            width_cm,
+            depth_cm,
+            calc_volume_cm3,
+        )
+
+        if calc_volume_cm3 <= upper_bound and calc_volume_cm3 >= lower_bound:
+            break
+
+        height_cm += step
+
+    return (height_cm, width_cm, depth_cm, calc_volume_cm3)
 
 
 @click.group()
@@ -14,9 +51,7 @@ GOLDEN_RATIO_NARROW = 1.618 - 1
 @click.option("--end-cm", "-e", type=float, default=40)
 @click.option("--step-size", "-x", type=float, default=0.5)
 @click.option("--exit-range", "-r", type=float, default=100)
-def cli(
-    ctx, start_cm: float, end_cm: float, step_size: float, exit_range: float
-):
+def cli(ctx, start_cm: float, end_cm: float, step_size: float, exit_range: float):
     ctx.obj = {}
     ctx.obj["start"] = start_cm
     ctx.obj["end"] = end_cm
@@ -28,41 +63,61 @@ def cli(
 @click.argument("box_volume_cm3", type=float)
 @click.pass_context
 def calculate_golden_ratio(ctx, box_volume_cm3: float):
-    logger.info("*** Finding parameters for box with volume %s cm^3 ***", box_volume_cm3)
-    calc_volume_cm3 = 0
-    height_cm = ctx.obj["start"]
-    width_cm = 0
-    depth_cm = 0
+    logger.info(
+        "*** Finding parameters for golden ratio box with volume %s cm^3 ***",
+        box_volume_cm3,
+    )
 
     upper_bound = box_volume_cm3 + ctx.obj["exit_range"]
     lower_bound = box_volume_cm3 - ctx.obj["exit_range"]
 
-    while height_cm < ctx.obj["end"]:
-        width_cm = height_cm * GOLDEN_RATIO
-        depth_cm = height_cm * GOLDEN_RATIO_NARROW
-        calc_volume_cm3 = height_cm * width_cm * depth_cm
-        logger.info(
-            "%s x %s x %s = %s",
-            height_cm,
-            width_cm,
-            depth_cm,
-            calc_volume_cm3,
-        )
+    height_cm, width_cm, depth_cm, calc_volume_cm3 = find_dimensions(
+        ctx.obj["start"],
+        ctx.obj["end"],
+        lower_bound,
+        upper_bound,
+        ctx.obj["step"],
+        GOLDEN_RATIO,
+        GOLDEN_RATIO_NARROW,
+    )
+    logger.info(
+        "*** Found size: %s x %s x %s = %s ***",
+        height_cm,
+        width_cm,
+        depth_cm,
+        calc_volume_cm3,
+    )
 
-        if (
-            calc_volume_cm3 <= upper_bound
-            and calc_volume_cm3 >= lower_bound
-        ):
-            logger.info(
-                "*** Found size: %s x %s x %s = %s ***",
-                height_cm,
-                width_cm,
-                depth_cm,
-                calc_volume_cm3,
-            )
-            break
 
-        height_cm += ctx.obj["step"]
+@cli.command()
+@click.argument("box_volume_cm3", type=float)
+@click.pass_context
+def calculate_sqrt_two(ctx, box_volume_cm3: float):
+    logger.info(
+        "*** Finding parameters for sqrt two box with volume %s cm^3 ***",
+        box_volume_cm3,
+    )
+
+    upper_bound = box_volume_cm3 + ctx.obj["exit_range"]
+    lower_bound = box_volume_cm3 - ctx.obj["exit_range"]
+
+    height_cm, width_cm, depth_cm, calc_volume_cm3 = find_dimensions(
+        ctx.obj["start"],
+        ctx.obj["end"],
+        lower_bound,
+        upper_bound,
+        ctx.obj["step"],
+        SQRT_TWO,
+        SQRT_TWO_NARROW,
+    )
+    logger.info(
+        "*** Found size: %s x %s x %s = %s ***",
+        height_cm,
+        width_cm,
+        depth_cm,
+        calc_volume_cm3,
+    )
+
 
 if __name__ == "__main__":
     cli()
