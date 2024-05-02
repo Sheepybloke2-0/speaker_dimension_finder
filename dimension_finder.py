@@ -4,11 +4,22 @@ import logging
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
+CM_TO_IN = 2.54
+
 GOLDEN_RATIO = 1.618
 GOLDEN_RATIO_NARROW = 1.618 - 1
 
 SQRT_TWO = 1.414
 SQRT_TWO_NARROW = 1.414 - 1
+
+
+def convert_cm_to_in(height, width, depth) -> tuple[float, float, float, float]:
+    height /= CM_TO_IN
+    width /= CM_TO_IN
+    depth /= CM_TO_IN
+    volume = height * width * depth
+
+    return (height, width, depth, volume)
 
 
 def find_dimensions(
@@ -81,11 +92,22 @@ def calculate_golden_ratio(ctx, box_volume_cm3: float):
         GOLDEN_RATIO_NARROW,
     )
     logger.info(
-        "*** Found size: %s x %s x %s = %s ***",
+        "*** Found size: %s cm x %s cm x %s cm = %s cm^3 ***",
         height_cm,
         width_cm,
         depth_cm,
         calc_volume_cm3,
+    )
+
+    height_in, width_in, depth_in, volume_in3 = convert_cm_to_in(
+        height_cm, width_cm, depth_cm
+    )
+    logger.info(
+        "*** Found size: %s in x %s in x %s in = %s in^3 ***",
+        height_in,
+        width_in,
+        depth_in,
+        volume_in3,
     )
 
 
@@ -111,11 +133,22 @@ def calculate_sqrt_two(ctx, box_volume_cm3: float):
         SQRT_TWO_NARROW,
     )
     logger.info(
-        "*** Found size: %s x %s x %s = %s ***",
+        "*** Found size: %s cm x %s cm x %s cm = %s cm^3 ***",
         height_cm,
         width_cm,
         depth_cm,
         calc_volume_cm3,
+    )
+
+    height_in, width_in, depth_in, volume_in3 = convert_cm_to_in(
+        height_cm, width_cm, depth_cm
+    )
+    logger.info(
+        "*** Found size: %s in x %s in x %s in = %s in^3 ***",
+        height_in,
+        width_in,
+        depth_in,
+        volume_in3,
     )
 
 

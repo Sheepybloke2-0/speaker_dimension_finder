@@ -17,6 +17,7 @@ Options:
 
 Commands:
   calculate-golden-ratio
+  calculate-sqrt-two
 ```
 
 Example:
