@@ -1,5 +1,7 @@
-import click
 import logging
+import math
+
+import click
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
@@ -13,16 +15,20 @@ SQRT_TWO = 1.414
 SQRT_TWO_NARROW = 1.414 - 1
 
 
-def convert_cm_to_in(height, width, depth) -> tuple[float, float, float, float]:
-    height /= CM_TO_IN
-    width /= CM_TO_IN
-    depth /= CM_TO_IN
+def convert_cm_to_in(value: float) -> float:
+    return value / CM_TO_IN
+
+
+def convert_cm_values_to_in(height, width, depth) -> tuple[float, float, float, float]:
+    height = convert_cm_to_in(height)
+    width = convert_cm_to_in(width)
+    depth = convert_cm_to_in(depth)
     volume = height * width * depth
 
     return (height, width, depth, volume)
 
 
-def find_dimensions(
+def find_rectangle_dimensions(
     start: float,
     end: float,
     lower_bound: float,
@@ -56,6 +62,28 @@ def find_dimensions(
     return (height_cm, width_cm, depth_cm, calc_volume_cm3)
 
 
+def find_sphere_dimensions(
+    start: float,
+    end: float,
+    lower_bound: float,
+    upper_bound: float,
+    step: float,
+) -> tuple[float, float]:
+    calc_volume_cm3 = 0
+    radius_cm = start
+
+    while radius_cm < end:
+        calc_volume_cm3 = math.pi * (4 / 3) * (radius_cm**3)
+        logger.debug("%s cm = %s cm^3", radius_cm, calc_volume_cm3)
+
+        if calc_volume_cm3 <= upper_bound and calc_volume_cm3 >= lower_bound:
+            break
+
+        radius_cm += step
+
+    return (radius_cm, calc_volume_cm3)
+
+
 @click.group()
 @click.pass_context
 @click.option("--start-cm", "-s", type=float, default=20)
@@ -82,7 +110,7 @@ def calculate_golden_ratio(ctx, box_volume_cm3: float):
     upper_bound = box_volume_cm3 + ctx.obj["exit_range"]
     lower_bound = box_volume_cm3 - ctx.obj["exit_range"]
 
-    height_cm, width_cm, depth_cm, calc_volume_cm3 = find_dimensions(
+    height_cm, width_cm, depth_cm, calc_volume_cm3 = find_rectangle_dimensions(
         ctx.obj["start"],
         ctx.obj["end"],
         lower_bound,
@@ -99,7 +127,7 @@ def calculate_golden_ratio(ctx, box_volume_cm3: float):
         calc_volume_cm3,
     )
 
-    height_in, width_in, depth_in, volume_in3 = convert_cm_to_in(
+    height_in, width_in, depth_in, volume_in3 = convert_cm_values_to_in(
         height_cm, width_cm, depth_cm
     )
     logger.info(
@@ -123,7 +151,7 @@ def calculate_sqrt_two(ctx, box_volume_cm3: float):
     upper_bound = box_volume_cm3 + ctx.obj["exit_range"]
     lower_bound = box_volume_cm3 - ctx.obj["exit_range"]
 
-    height_cm, width_cm, depth_cm, calc_volume_cm3 = find_dimensions(
+    height_cm, width_cm, depth_cm, calc_volume_cm3 = find_rectangle_dimensions(
         ctx.obj["start"],
         ctx.obj["end"],
         lower_bound,
@@ -140,7 +168,7 @@ def calculate_sqrt_two(ctx, box_volume_cm3: float):
         calc_volume_cm3,
     )
 
-    height_in, width_in, depth_in, volume_in3 = convert_cm_to_in(
+    height_in, width_in, depth_in, volume_in3 = convert_cm_values_to_in(
         height_cm, width_cm, depth_cm
     )
     logger.info(
@@ -149,6 +177,46 @@ def calculate_sqrt_two(ctx, box_volume_cm3: float):
         width_in,
         depth_in,
         volume_in3,
+    )
+
+
+@cli.command()
+@click.argument("sphere_volume_cm3", type=float)
+@click.pass_context
+def calculate_sphere(ctx, sphere_volume_cm3: float):
+    logger.info(
+        "*** Finding parameters for ellipsoid with volume %s cm^3 ***",
+        sphere_volume_cm3,
+    )
+
+    upper_bound = sphere_volume_cm3 + ctx.obj["exit_range"]
+    lower_bound = sphere_volume_cm3 - ctx.obj["exit_range"]
+
+    radius_cm, volume_cm3 = find_sphere_dimensions(
+        ctx.obj["start"], ctx.obj["end"], lower_bound, upper_bound, ctx.obj["step"]
+    )
+    logger.info(
+        "*** Found size: %s cm = %s cm^3 ***",
+        radius_cm,
+        volume_cm3,
+    )
+
+    radius_in = convert_cm_to_in(radius_cm)
+    volume_in3 = math.pi * (4 / 3) * (radius_in**3)
+    logger.info(
+        "*** Found size: %s in = %s in^3 ***",
+        radius_in,
+        volume_in3,
+    )
+
+
+@cli.command()
+@click.argument("ellipsoid_volume_cm3", type=float)
+@click.pass_context
+def calculate_ellipsoid(ctx, ellipsoid_volume_cm3: float):
+    logger.info(
+        "*** Finding parameters for ellipsoid with volume %s cm^3 ***",
+        ellipsoid_volume_cm3,
     )
 
 
